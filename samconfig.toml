@@ -2,8 +2,8 @@ version = 0.1
 [default]
 [default.deploy]
 [default.deploy.parameters]
-stack_name = "sam-music-directory"
+stack_name = "sam-messages"
 s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-ndnrpoltnp93"
-s3_prefix = "sam-music-directory"
+s3_prefix = "sam-messages"
 region = "ap-south-1"
 capabilities = "CAPABILITY_IAM"

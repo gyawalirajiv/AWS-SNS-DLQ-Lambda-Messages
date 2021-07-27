@@ -14,6 +14,8 @@ Globals:
 Resources:
   MessagesTopic:
     Type: AWS::SNS::Topic
+  MessagesDLQ:
+    Type: AWS::SNS::Topic
   MessagesBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -22,7 +24,10 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: messages
-      Handler: messages.functions.MessagePublisherFunction::create
+      Handler: messages.functions.MessagePublisherFunction::handler
+      DeadLetterQueue:
+        Type: SNS
+        TargetArn: !Ref MessagesDLQ
       Policies:
         - S3ReadPolicy:
             BucketName: !Sub ${AWS::StackName}-${AWS::AccountId}-${AWS::Region}
@@ -35,15 +40,25 @@ Resources:
         S3Event:
           Type: S3
           Properties:
-            Path: !Ref MessagesBucket
+            Bucket: !Ref MessagesBucket
             Events: s3:ObjectCreated:*
-#  MessageSubscriberFunction:
-#    Type: AWS::Serverless::Function
-#    Properties:
-#      CodeUri: messages
-#      Handler: messages.functions.CreateArtistFunction::create
-#      Events:
-#        SNSEvent:
-#          Type: SNS
-#          Properties:
-#            Topic: !Ref MessagesTopic
+  MessageSubscriberFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: messages
+      Handler: messages.functions.MessageSubscriberFunction::handler
+      Events:
+        SNSEvent:
+          Type: SNS
+          Properties:
+            Topic: !Ref MessagesTopic
+  MessageExceptionFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+        CodeUri: messages
+        Handler: messages.functions.MessageExceptionFunction::handler
+        Events:
+          SNSEvent:
+            Type: SNS
+            Properties:
+              Topic: !Ref MessagesDLQ
