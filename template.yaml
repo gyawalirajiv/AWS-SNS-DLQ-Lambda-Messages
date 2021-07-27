@@ -1,0 +1,49 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  messages
+
+  Sample SAM Template for messages
+
+Globals:
+  Function:
+    Runtime: java8
+    Timeout: 20
+    MemorySize: 512
+
+Resources:
+  MessagesTopic:
+    Type: AWS::SNS::Topic
+  MessagesBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ${AWS::StackName}-${AWS::AccountId}-${AWS::Region}
+  MessagePublisherFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: messages
+      Handler: messages.functions.MessagePublisherFunction::create
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Sub ${AWS::StackName}-${AWS::AccountId}-${AWS::Region}
+        - SNSPublishMessagePolicy:
+            TopicName: !GetAtt MessagesTopic.TopicName
+      Environment:
+        Variables:
+          MESSAGES_TOPIC: !Ref MessagesTopic
+      Events:
+        S3Event:
+          Type: S3
+          Properties:
+            Path: !Ref MessagesBucket
+            Events: s3:ObjectCreated:*
+#  MessageSubscriberFunction:
+#    Type: AWS::Serverless::Function
+#    Properties:
+#      CodeUri: messages
+#      Handler: messages.functions.CreateArtistFunction::create
+#      Events:
+#        SNSEvent:
+#          Type: SNS
+#          Properties:
+#            Topic: !Ref MessagesTopic
